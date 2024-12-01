@@ -1,11 +1,21 @@
+import argparse
+
 import librosa
 import librosa.display
 import matplotlib.pyplot as plt
 import numpy as np
 
+
 def generate_spectrogram(mp3_file, output_image):
     # Load the MP3 file
     y, sr = librosa.load(mp3_file, sr=None)  # sr=None to keep the original sample rate
+    onset_env = librosa.onset.onset_strength(y=y, sr=sr)
+    tempo = librosa.feature.tempo(onset_envelope=onset_env,start_bpm=100,sr=sr)
+    dtempo = librosa.feature.tempo(onset_envelope=onset_env, sr=sr,
+                                   aggregate=None)
+    print(f"This is the tempo {tempo[0]}")
+    print(f"This is the dynamic tempo {dtempo}")
+
 
     cur_n_fft = 4096
     cur_hop_length = 512
@@ -13,6 +23,9 @@ def generate_spectrogram(mp3_file, output_image):
     # Compute the Short-Time Fourier Transform (STFT) of the audio signal
     D = librosa.amplitude_to_db(np.abs(librosa.stft(y, n_fft = cur_n_fft, hop_length = cur_hop_length)), ref=np.max)
 
+
+    print(len(D))
+    print(len(D[0]))
     # Create a plot for the spectrogram
     plt.figure(figsize=(10, 6))
     librosa.display.specshow(D, sr=sr, x_axis='time', y_axis='log', fmin=0, fmax=2000)
@@ -25,10 +38,18 @@ def generate_spectrogram(mp3_file, output_image):
 
     print(f"Spectrogram saved as {output_image}")
 
-if __name__ == "__main__":
 
+if __name__ == "__main__":
+    # Parses the argument taking in and adds Data prefix and mp3 suffix
+    parses = argparse.ArgumentParser()
+    parses.add_argument('file_path', type=str, help="Path to the input file")
+    args = parses.parse_args()
+    filepath = args.file_path
+    input_file = "Data/" + args.file_path + ".mp3"
+    parses.add_argument('file_path ')
 # Example usage
-    generate_spectrogram('Data/See_you_again_song.mp3', 'spectrogram.png')
+
+    generate_spectrogram(input_file, 'spectrogram.png')
 
 
 
