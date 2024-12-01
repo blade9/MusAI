@@ -16,14 +16,33 @@ def generate_spectrogram(mp3_file, output_image):
     print(f"This is the tempo {tempo[0]}")
     print(f"This is the dynamic tempo {dtempo}")
 
+    cur_n_fft = 2048
+    cur_hop_length = cur_n_fft // 4
 
-    cur_n_fft = 4096
-    cur_hop_length = 512
     # Generate the spectrogram
     # Compute the Short-Time Fourier Transform (STFT) of the audio signal
-    D = librosa.amplitude_to_db(np.abs(librosa.stft(y, n_fft = cur_n_fft, hop_length = cur_hop_length)), ref=np.max)
+    D = librosa.amplitude_to_db(np.abs(librosa.stft(y, n_fft=cur_n_fft, hop_length=cur_hop_length)), ref=np.max)
+
+    beat_per_second = 60/tempo[0]
+    frames_per_second = int((beat_per_second * sr)//cur_hop_length)
+
+    for i in range(len(D[0])//frames_per_second):
+
+        d_sub = D[:, i*frames_per_second:(i+1)*frames_per_second]
+        produceSpectrogramImage(d_sub, sr, output_image+""+f'{i}'+".png")
+    '''
+    print(type(frames_per_second))
+    print(type(D))
+    print(D.shape)
+
+    print(type(d_sub))
+    print(d_sub.shape)
+
+    produceSpectrogramImage(d_sub, sr, output_image)
+    '''
 
 
+def produceSpectrogramImage(D, sr, output_image):
     print(len(D))
     print(len(D[0]))
     # Create a plot for the spectrogram
@@ -49,7 +68,7 @@ if __name__ == "__main__":
     parses.add_argument('file_path ')
 # Example usage
 
-    generate_spectrogram(input_file, 'spectrogram.png')
+    generate_spectrogram(input_file, 'Spectrogram/spectrogram')
 
 
 
