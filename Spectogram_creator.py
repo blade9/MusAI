@@ -15,7 +15,7 @@ def generate_spectrogram(mp3_file, output_image):
 
     # Create a plot for the spectrogram
     plt.figure(figsize=(10, 6))
-    librosa.display.specshow(D, sr=sr, x_axis='time', y_axis='log')
+    librosa.display.specshow(D, sr=sr, x_axis='time', y_axis='log', fmin=0, fmax=2000)
     plt.colorbar(format='%+2.0f dB')
     plt.title('Spectrogram')
 
@@ -28,7 +28,7 @@ def generate_spectrogram(mp3_file, output_image):
 if __name__ == "__main__":
 
 # Example usage
-    generate_spectrogram('See_you_again_song.mp3', 'spectrogram.png')
+    generate_spectrogram('Data/See_you_again_song.mp3', 'spectrogram.png')
 
 
 
