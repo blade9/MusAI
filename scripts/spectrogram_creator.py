@@ -1,10 +1,10 @@
 import os
 import argparse
-
 import librosa
 import librosa.display
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 
 
 def generate_spectrogram(mp3_file, output_dir):
@@ -24,19 +24,28 @@ def generate_spectrogram(mp3_file, output_dir):
     cur_n_fft = 2048
     cur_hop_length = cur_n_fft // 4
 
+
     # Generate the spectrogram
     # Compute the Short-Time Fourier Transform (STFT) of the audio signal
     D = librosa.amplitude_to_db(np.abs(librosa.stft(y, n_fft=cur_n_fft, hop_length=cur_hop_length)), ref=np.max)
 
+
     beat_per_second = 60/tempo[0]
     frames_per_second = int((beat_per_second * sr)//cur_hop_length)
-
+    produceSpectrogramImage(D, sr, output_image + "" + 'original' + ".png")
+    print(D.shape)
+    np.set_printoptions(threshold=np.inf)
+    for i in range(len(D[0])//frames_per_second):
+        ons_splice = onset_env[frames_per_second*i:frames_per_second*(i+1)]
+        produceTempogram(ons_splice, sr, cur_hop_length, i)
+    '''
     for i in range(len(D[0])//frames_per_second):
 
         # Extract the spectrogram in the directory of the song
         d_sub = D[:, i*frames_per_second:(i+1)*frames_per_second]
         output_image = os.path.join(output_dir, f'spectrogram{i}.png')
         produceSpectrogramImage(d_sub, sr, output_image)
+    '''
     '''
     print(type(frames_per_second))
     print(type(D))
@@ -47,7 +56,6 @@ def generate_spectrogram(mp3_file, output_dir):
 
     produceSpectrogramImage(d_sub, sr, output_image)
     '''
-
 
 def produceSpectrogramImage(D, sr, output_image):
     print(len(D))
@@ -65,6 +73,20 @@ def produceSpectrogramImage(D, sr, output_image):
     print(f"Spectrogram saved as {output_image}")
 
 
+def produceTempogram(onset_env, sr, hop_length, num):
+    #onset_env = librosa.onset.onset_strength(y=audio_slice, sr=sr, hop_length=hop_length)
+    tempogram = librosa.feature.tempogram(onset_envelope=onset_env, sr=sr, hop_length=hop_length)
+    plt.figure(figsize=(10, 6))
+    librosa.display.specshow(tempogram, sr=sr, hop_length=hop_length, x_axis='time', y_axis='tempo', cmap='magma')
+    plt.colorbar(label='Strength')
+    plt.title('Tempogram')
+    plt.xlabel('Time (s)')
+    plt.ylabel('Tempo (BPM)')
+    plt.tight_layout()
+    plt.savefig("Tempogram/tempogram"+str(num))
+    plt.close()
+
+
 if __name__ == "__main__":
     # Parses the argument taking in and adds Data prefix and mp3 suffix
     parses = argparse.ArgumentParser()
@@ -76,6 +98,5 @@ if __name__ == "__main__":
     song_name = os.path.splitext(os.path.basename(filepath))[0]
     output_dir = os.path.join('Spectrogram', song_name)
 # Example usage
-
     generate_spectrogram(input_file, output_dir)
     print(f"Spectrogram saved as {output_dir}")
