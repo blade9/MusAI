@@ -1,4 +1,6 @@
+import os
 import pretty_midi
+import argparse
 from NoteObject import NoteObject
 from BeatObject import BeatObject
 
@@ -37,11 +39,40 @@ def process_midi_file(midi_path):
             measure_index = int(start_time/(time_signature[0]/bps))
             all_beats[measure_index].addNote(new_note)
 
+    output_midi = pretty_midi.PrettyMIDI(initial_tempo=tempo)
+    piano_program = pretty_midi.instrument_name_to_program('Acoustic Grand Piano')
+    piano = pretty_midi.Instrument(program=piano_program)
 
     for i in range(len(all_beats)):
-        print(i)
+        # print(i)
         for my_note in all_beats[i].notes:
-            print(my_note.getNoteType())
+            start_time = my_note.starting_time
+            duration = my_note.duration
+            pitch = 60  # Middle C for simplicity
+            velocity = 100  # Standard velocity
+            note = pretty_midi.Note(velocity=velocity, pitch=pitch, start=start_time, end=start_time+duration)
+            piano.notes.append(note)
+            # print(my_note.getNoteType())
 
+    output_midi.instruments.append(piano)
+    output_dir = 'beat_outputs'
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    for i in range(len(all_beats)):
+        print("Measure: ", i)
+        for my_note in all_beats[i].notes:
+            print("Note: ", my_note.getNoteType())
+
+    song_name = os.path.splitext(os.path.basename(midi_path))[0]
+    output_path = os.path.join(output_dir, f'{song_name}_output.mid')
+    output_midi.write(output_path)
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Process a MIDI file and output beats.')
+    parser.add_argument('midi_path', type=str, help='Path to the input MIDI file')
+    args = parser.parse_args()
+
+    process_midi_file(args.midi_path)
 
 

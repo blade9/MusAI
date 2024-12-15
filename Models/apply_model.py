@@ -15,7 +15,7 @@ sequence_length = 10
 input_size = 128 * 128
 hidden_size = 256
 num_layers = 2
-num_classes = 5  # 12 notes in an octave
+num_classes = 12  # 12 notes in an octave
 learning_rate = 0.001
 
 
