@@ -65,6 +65,7 @@ def produceSpectrogramImage(D, sr, output_image):
 
     print(f"Spectrogram saved as {output_image}")
 
+'''
 def produceTempogram(onset_env, sr, hop_length, num):
     #onset_env = librosa.onset.onset_strength(y=audio_slice, sr=sr, hop_length=hop_length)
     tempogram = librosa.feature.tempogram(onset_envelope=onset_env, sr=sr, hop_length=hop_length)
@@ -77,6 +78,7 @@ def produceTempogram(onset_env, sr, hop_length, num):
     plt.tight_layout()
     plt.savefig("Tempogram/tempogram"+str(num))
     plt.close()
+'''
 
 if __name__ == "__main__":
     # Parses the argument taking in and adds Data prefix and mp3 suffix
