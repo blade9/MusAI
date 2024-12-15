@@ -6,8 +6,6 @@ import librosa
 import numpy as np
 import torchvision.transforms as transforms
 from torch.utils.data import Dataset, DataLoader
-from mido import MidiFile, MidiTrack, Message
-import mido
 
 # Device configuration
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -45,12 +43,12 @@ def get_note_from_freq(frequency):
     note_names = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
 
     if frequency == 0:
-        return "Silence" # Default to Silence at no frequency
+        return "Silence"
 
     h = round(12 * np.log2(frequency / C0))
     octave = h // 12
     n = h % 12
-    return f"{note_names[n]}{octave}"  # Return note with octave number
+    return note_names[n]
 
 
 class NewSongDataset(Dataset):
@@ -79,40 +77,8 @@ class NewSongDataset(Dataset):
         sequence = sequence.view(self.sequence_length, -1)
         return sequence
 
-def note_name_to_number(note_name):
-    note_mapping = {
-        'C': 0, 'C#': 1, 'D': 2, 'D#': 3, 'E': 4, 'F': 5,
-        'F#': 6, 'G': 7, 'G#': 8, 'A': 9, 'A#': 10, 'B': 11
-    }
-    note, octave = note_name[:-1], int(note_name[-1])
-    midi_number = note_mapping[note] + (octave + 1) * 12
-    return midi_number
-
-def create_midi_from_notes(notes, output_file='output.mid', tempo=500000):
-    midi = MidiFile()
-    track = MidiTrack()
-    midi.tracks.append(track)
-    track.append(mido.MetaMessage('set_tempo', tempo=tempo))
-
-    for note_str in notes:
-        try:
-            if note_str == "Silence":
-                continue
-            note_num = note_name_to_number(note_str)
-            track.append(mido.Message('note_on', note=note_num, velocity=64, time=0))
-            track.append(mido.Message('note_off', note=note_num, velocity=64, time=500))
-        except (ValueError, KeyError) as e:
-            print(f"Skipping invalid note: {note_str}")
-            continue
-
-    midi.save(output_file)
-    print(f"MIDI file saved as {output_file}")
-
 
 def analyze_song_notes(song_name):
-    # Create output directory if it doesn't exist
-    os.makedirs("output", exist_ok=True)
-
     # Load the trained model
     model = RhythmLSTM(input_size, hidden_size, num_layers, num_classes).to(device)
     model.load_state_dict(torch.load('rhythm_lstm_model.pth'))
@@ -184,11 +150,6 @@ def analyze_song_notes(song_name):
         time_start = i * 0.5
         time_end = (i + window_size) * 0.5
         print(f"{time_start:.1f}s - {time_end:.1f}s: {progression}")
-
-    # When creating MIDI file
-    valid_notes = [note for note in rhythm_notes if note != "Silence" and note[-1].isdigit()]
-    create_midi_from_notes(valid_notes, output_file=f"output/{song_name}_output.mid")
-    print("\nMIDI file created with the note analysis")
 
 
 if __name__ == "__main__":
