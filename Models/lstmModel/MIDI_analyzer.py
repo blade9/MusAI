@@ -1,6 +1,6 @@
 import pretty_midi
 from NoteObject import NoteObject
-from BeatObject import BeatObject
+from Models.lstmModel.BeatObject import BeatObject
 
 
 def process_midi_file(midi_path):
