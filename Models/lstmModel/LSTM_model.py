@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from torchvision import models
 
 # Define spectrogram shape
 # Format: (channels, frequency_bins, time_frames)
@@ -12,17 +13,24 @@ class SpectrogramRhythmModel(nn.Module):
         super(SpectrogramRhythmModel, self).__init__()
 
         # CNN layers
-        self.conv1 = nn.Conv2d(1, 32, kernel_size=(5, 5), padding=(2, 2))
-        self.conv2 = nn.Conv2d(32, 64, kernel_size=(3, 3), padding=(1, 1))
-        self.pool = nn.MaxPool2d((2, 2))  # Reduces each dimension by half
+
+        self.resnet = models.resnet18(pretrained=True)
+        self.resnet.conv1 = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+        self.resnet = nn.Sequential(*list(self.resnet.children())[:-2])
 
         # Compute the flattened size after convolution + pooling
         channels, freq_bins, time_frames = spectrogram_shape
+        with torch.no_grad():
+            dummy_input = torch.randn(1, 1, freq_bins, time_frames)  # 1 batch, 1 channel
+            resnet_output = self.resnet(dummy_input)
+            self.flattened_size = resnet_output.view(1, -1).size(1)
+
         self.lstm_input_size = (freq_bins // 2) * (time_frames // 2) * 64
 
         # LSTM layers
-        self.lstm = nn.LSTM(input_size=self.lstm_input_size, hidden_size=hidden_size,
+        self.lstm = nn.LSTM(input_size=self.flattened_size, hidden_size=hidden_size,
                             num_layers=num_layers, batch_first=True, dropout=dropout)
+
 
         # Fully connected output layers
         self.fc1 = nn.Linear(hidden_size, hidden_size // 2)
@@ -30,22 +38,18 @@ class SpectrogramRhythmModel(nn.Module):
         self.output_layer = nn.Linear(hidden_size // 2, output_size)
 
     def forward(self, x):
-        # CNN feature extraction
-        x = torch.relu(self.conv1(x))
-        x = self.pool(torch.relu(self.conv2(x)))
-
-        # Flatten for LSTM
+        # ResNet feature extraction
+        x = self.resnet(x)
         batch_size = x.size(0)
-        x = x.view(batch_size, -1, self.lstm_input_size)
+        x = x.view(batch_size, -1)  # Flatten the ResNet output
 
         # LSTM processing
-        lstm_out, _ = self.lstm(x)
+        lstm_out, _ = self.lstm(x.unsqueeze(1))  # Add sequence dimension
 
         # Fully connected layers
         x = self.relu(self.fc1(lstm_out))
         output = self.output_layer(x)
         return output
-
 
 # Hyperparameters
 hidden_size = 256
