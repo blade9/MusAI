@@ -1,4 +1,4 @@
-import NoteObject
+from Models.lstmModel.NoteObject import NoteObject
 
 class BeatObject:
     def __init__(self, numberID, notes, tempo, beats_per_measure=4, note_value_per_beat=4):
