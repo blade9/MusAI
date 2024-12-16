@@ -1,11 +1,13 @@
-import pretty_midi
 from collections import defaultdict
+import numpy as np
+import pretty_midi
+import pprint
 
 midi_file_path = '../data/extracted_stems/MIDI/melody0.mid'
-output_path = '../outputs'
+NUM_PITCHES = 128
 
-def group_pitches_by_start_time(midi_file_path, time_tolerance=0.01):
-    midi_data = pretty_midi.PrettyMIDI(midi_file_path)
+def group_pitches_by_onset(melody_path, time_tolerance=0.01):
+    midi_data = pretty_midi.PrettyMIDI(melody_path)
     grouped_notes = defaultdict(list)
 
     # Iterate through all notes in all instruments
@@ -29,22 +31,37 @@ def remove_redundant_groups(grouped_notes):
 
     return unique_groups
 
-def create_midi_from_group(grouped_notes, output_dir):
-    for start_time, notes in grouped_notes.items():
-        midi = pretty_midi.PrettyMIDI()
-        instrument = pretty_midi.Instrument(program=0)
+def create_midi_from_group(start_time, notes):
+    midi = pretty_midi.PrettyMIDI()
+    instrument = pretty_midi.Instrument(program=0)
 
-        # Add notes to the instrument
-        for note in notes:
-            instrument.notes.append(pretty_midi.Note(
-                velocity=note.velocity,
-                pitch=note.pitch,
-                start=0,  # Reset start times relative to the group
-                end=1 # Adjust end time to be relative
-            ))
+    # Add notes to the instrument
+    for note in notes:
+        instrument.notes.append(pretty_midi.Note(
+            velocity=note.velocity,
+            pitch=note.pitch,
+            start=0,  # Reset start times relative to the group
+            end=1 # Adjust end time to be relative
+        ))
 
-        midi.instruments.append(instrument)
+    midi.instruments.append(instrument)
+    return midi
 
-        # Save to a MIDI file
-        output_file = f"{output_dir}/group_{start_time:.3f}.mid"
-        midi.write(output_file)
+def get_midi_label(midi):
+    label = np.zeros(NUM_PITCHES, dtype=int)
+    for instrument in midi.instruments:
+        for note in instrument.notes:
+            label[note.pitch] = 1
+    return label
+
+def midi_to_spectrogram(midi):
+
+
+if __name__ == '__main__':
+    grouped_notes = group_pitches_by_onset(midi_file_path)
+    unique_groups = remove_redundant_groups(grouped_notes)
+    for start_time, notes in unique_groups.items():
+        midi = create_midi_from_group(start_time, notes)
+        label = get_midi_label(midi)
+        break
+    print(label)
