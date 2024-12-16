@@ -1,6 +1,6 @@
 import os
 
-from scripts.preprocessingutils import *
+from scripts.preprocessing_utils import *
 import tensorflow as tf
 
 
