@@ -25,17 +25,3 @@ def build_pitch_classifier_cnn(input_shape=(1025, 173, 1), num_pitches=128):
     model.add(layers.Dense(num_pitches, activation='sigmoid'))  # FC layer 2 (Output)
 
     return model
-
-
-# Build the model
-input_shape = (1025, 173, 1)
-num_pitches = 128
-model = build_pitch_classifier_cnn(input_shape, num_pitches)
-
-# Compile the model
-model.compile(optimizer='adam',
-              loss='binary_crossentropy',  # Multi-label classification
-              metrics=['accuracy'])
-
-# Model summary
-model.summary()
