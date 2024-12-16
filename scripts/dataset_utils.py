@@ -1,4 +1,3 @@
-from dataset_generator import *
 import tensorflow as tf
 
 MIDI_FILE_PATH = '../data/extracted_stems/MIDI'
