@@ -1,8 +1,24 @@
 from Models.lstmModel import MIDI_analyzer
+from Models.lstmModel.NoteObject import NoteObject
 import pretty_midi
 import os, argparse
 
-all_beats = MIDI_analyzer.process_midi_file('Data/babyslakh_16k/Track00001/MIDI/S00.mid')
+all_beats, beat_times = MIDI_analyzer.process_midi_file('Data/babyslakh_16k/Track00001/MIDI/S00.mid')
+
+for i in beat_times:
+    print(i)
+    print("This is our measure")
+    for j in beat_times[i]:
+        print("This is our beat")
+        print(j)
+        for my_note in beat_times[i][j]:
+            print(my_note.getNoteType())
+
+
+# Go through the all_beats array by measure
+# Mod the starting time by the time of the measure taking
+# Group the starting based on what division based
+
 
 output_midi = pretty_midi.PrettyMIDI(initial_tempo=200)
 piano_program = pretty_midi.instrument_name_to_program('Acoustic Grand Piano')
@@ -28,9 +44,10 @@ if not os.path.exists(output_dir):
     os.makedirs(output_dir)
 
 for i in range(len(all_beats)):
-    print("Measure: ", i)
+    #print("Measure: ", i)
     for my_note in all_beats[i].notes:
-        print("Note: ", my_note.getNoteType())
+        #print("Note: ", my_note.getNoteType())
+        pass
 
 song_name = 'pirates_midi_mine'
 output_path = os.path.join(output_dir, f'{song_name}_output.mid')

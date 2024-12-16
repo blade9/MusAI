@@ -49,20 +49,34 @@ def process_midi_file(midi_path):
                 #print(new_note.getNoteType())
                 all_beats[measure_index].addNote(new_note)
 
-
     for i in range(len(all_beats)):
-        print(i)
-        print()
+        #print(i)
+        #print()
         sum = 0
         for my_note in all_beats[i].notes:
-            print(NoteObject.NOTE_TYPES[my_note.getNoteType()])
+            #print(NoteObject.NOTE_TYPES[my_note.getNoteType()])
             sum += NoteObject.NOTE_TYPES[my_note.getNoteType()]
-            print(my_note.getNoteType())
-            print(my_note.getStartTime())
-            print(my_note.getDuration())
-            print()
-        print(sum)
-        print()
+            #print(my_note.getNoteType())
+            #print(my_note.getStartTime())
+            #print(my_note.getDuration())
+            #print()
+        #print(sum)
+        #print()
+
+    beat_calc = {}
+    for i in range(len(all_beats)):
+        beat_calc[i] = {}
+        address = f"Measure", i
+        for j in range(time_signature[0]):
+            beat_calc[i][j] = []
+
+        for my_note in all_beats[i].notes:
+            mod_start = my_note.getStartTime() % measure_duration
+            beatnum = mod_start // (measure_duration/time_signature[0])
+            beat_calc[i][beatnum].append(my_note)
+
+    return all_beats, beat_calc
+
 
 
 
