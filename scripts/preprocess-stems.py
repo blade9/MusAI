@@ -1,4 +1,7 @@
 from collections import defaultdict
+
+import matplotlib.pyplot as plt
+import librosa
 import numpy as np
 import pretty_midi
 import pprint
@@ -54,7 +57,31 @@ def get_midi_label(midi):
             label[note.pitch] = 1
     return label
 
-def midi_to_spectrogram(midi):
+def midi_to_spectrogram(midi, sample_rate=44100, n_fft=2048, hop_length=512):
+    audio_wave = midi.fluidsynth(fs=sample_rate)
+    spectrogram = librosa.stft(audio_wave, n_fft=n_fft, hop_length=hop_length)
+    spectrogram_db = librosa.amplitude_to_db(np.abs(spectrogram), ref=np.max)
+    return spectrogram_db
+
+def plot_spectrogram(spectrogram, sample_rate=44100, hop_length=512):
+    """
+    Plot the spectrogram for visualization.
+    """
+    plt.figure(figsize=(10, 6))
+    librosa.display.specshow(
+        spectrogram,
+        sr=sample_rate,
+        hop_length=hop_length,
+        x_axis="time",
+        y_axis="log"
+    )
+    plt.colorbar(format="%+2.0f dB")
+    plt.title("Spectrogram")
+    plt.xlabel("Time")
+    plt.ylabel("Frequency")
+    plt.tight_layout()
+    plt.show()
+
 
 
 if __name__ == '__main__':
@@ -62,6 +89,6 @@ if __name__ == '__main__':
     unique_groups = remove_redundant_groups(grouped_notes)
     for start_time, notes in unique_groups.items():
         midi = create_midi_from_group(start_time, notes)
-        label = get_midi_label(midi)
+        spectrogram = midi_to_spectrogram(midi)
+        plot_spectrogram(spectrogram)
         break
-    print(label)
