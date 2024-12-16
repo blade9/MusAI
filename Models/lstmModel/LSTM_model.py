@@ -50,6 +50,35 @@ class SpectrogramRhythmModel(nn.Module):
         x = self.relu(self.fc1(lstm_out))
         output = self.output_layer(x)
         return output
+    
+    def train_model(model, dataloader, optimizer, criterion, num_epochs, device):
+        model.to(device)
+        for epoch in range(num_epochs):
+            model.train()  # Set the model to training mode
+            running_loss = 0.0
+
+            for spectrograms, labels in dataloader:
+                # Move data to the appropriate device (CPU/GPU)
+                spectrograms = spectrograms.to(device)
+                labels = labels.to(device)
+
+                # Zero the parameter gradients
+                optimizer.zero_grad()
+
+                # Forward pass
+                outputs = model(spectrograms)
+
+                # Reshape outputs and labels for loss computation
+                loss = criterion(outputs.view(-1, outputs.size(-1)), labels.view(-1))
+
+                # Backward pass and optimize
+                loss.backward()
+                optimizer.step()
+
+                running_loss += loss.item()
+
+            # Print epoch loss
+            print(f"Epoch [{epoch + 1}/{num_epochs}], Loss: {running_loss / len(dataloader):.4f}")
 
 # Hyperparameters
 hidden_size = 256
@@ -73,3 +102,4 @@ labels = torch.randint(0, 88, (batch_size, spectrogram_shape[2]))  # Random labe
 output = model(spectrogram)
 loss = criterion(output.view(-1, output_size), labels.view(-1))
 print("Loss:", loss.item())
+
