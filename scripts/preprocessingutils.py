@@ -1,4 +1,5 @@
 from collections import defaultdict
+from midi2audio import FluidSynth
 
 import matplotlib.pyplot as plt
 import librosa
@@ -6,10 +7,11 @@ import numpy as np
 import pretty_midi
 import pprint
 
-midi_file_path = '../data/extracted_stems/MIDI/melody0.mid'
 NUM_PITCHES = 128
 
 def group_pitches_by_onset(melody_path, time_tolerance=0.01):
+    if isinstance(melody_path, bytes):
+        melody_path = melody_path.decode('utf-8')
     midi_data = pretty_midi.PrettyMIDI(melody_path)
     grouped_notes = defaultdict(list)
 
@@ -25,13 +27,11 @@ def group_pitches_by_onset(melody_path, time_tolerance=0.01):
 def remove_redundant_groups(grouped_notes):
     unique_groups = {}
     seen_pitches = set()
-
     for time, notes in grouped_notes.items():
         pitch_set = tuple(sorted(note.pitch for note in notes))
         if pitch_set not in seen_pitches:
             seen_pitches.add(pitch_set)
             unique_groups[time] = notes
-
     return unique_groups
 
 def create_midi_from_group(start_time, notes):
@@ -81,14 +81,3 @@ def plot_spectrogram(spectrogram, sample_rate=44100, hop_length=512):
     plt.ylabel("Frequency")
     plt.tight_layout()
     plt.show()
-
-
-
-if __name__ == '__main__':
-    grouped_notes = group_pitches_by_onset(midi_file_path)
-    unique_groups = remove_redundant_groups(grouped_notes)
-    for start_time, notes in unique_groups.items():
-        midi = create_midi_from_group(start_time, notes)
-        spectrogram = midi_to_spectrogram(midi)
-        plot_spectrogram(spectrogram)
-        break
