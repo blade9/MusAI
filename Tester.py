@@ -14,6 +14,23 @@ for i in beat_times:
         for my_note in beat_times[i][j]:
             print(my_note.getNoteType())
 
+data_in_input = []
+for i in beat_times:
+    spec_file_path = f"Spectrogra_Measures/measures_{i+1}"
+    for j in beat_times[i]:
+        spec_file_new = spec_file_path + f"/spectrogram_{j}"
+        note_data = []
+        for my_note in beat_times[i][j]:
+            note_data.append(my_note.getData())
+        txtline = spec_file_new + ", " + str(note_data)
+        data_in_input.append(txtline)
+
+
+with open("input.txt", "w") as file:
+    for line in data_in_input:
+        file.write(line+"\n")
+
+
 
 # Go through the all_beats array by measure
 # Mod the starting time by the time of the measure taking
