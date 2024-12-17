@@ -1,15 +1,15 @@
+import tensorflow as tf
+import numpy as np
 import os
 import ast
-from PIL import Image
-import torch
-from torch.utils.data import Dataset, DataLoader
-from torchvision import transforms
-from your_model_file import SpectrogramRhythmModel  # Import your model class
+from sklearn.model_selection import train_test_split
+from lstmModel/LSTM_model import create_spectrogram_rhythm_model
 
-class SpectrogramDataset(Dataset):
-    def __init__(self, image_dir, label_file, transform=None):
+class SpectrogramDataset(tf.keras.utils.Sequence):
+    def __init__(self, image_dir, label_file, batch_size=32, image_size=(224, 224)):
         self.image_dir = image_dir
-        self.transform = transform
+        self.batch_size = batch_size
+        self.image_size = image_size
         self.data = []
         
         with open(label_file, 'r') as f:
@@ -17,58 +17,50 @@ class SpectrogramDataset(Dataset):
                 img_name, label_str = line.strip().split(',', 1)
                 label = ast.literal_eval(label_str)  # Convert string to list
                 self.data.append((img_name, label))
+        
+        self.on_epoch_end()
 
     def __len__(self):
-        return len(self.data)
+        return int(np.ceil(len(self.data) / float(self.batch_size)))
 
     def __getitem__(self, idx):
-        img_name, label = self.data[idx]
-        
-        # Load the image
-        img_path = os.path.join(self.image_dir, img_name)
-        image = Image.open(img_path).convert('RGB')
-        
-        if self.transform:
-            image = self.transform(image)
-        
-        # Convert label to tensor
-        label_tensor = torch.tensor(label, dtype=torch.float32)
-        
-        return image, label_tensor
+        batch_data = self.data[idx * self.batch_size:(idx + 1) * self.batch_size]
+        batch_images = []
+        batch_labels = []
 
-# Define transform
-transform = transforms.Compose([
-    transforms.Resize((224, 224)),
-    transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-])
+        for img_name, label in batch_data:
+            img_path = os.path.join(self.image_dir, img_name)
+            img = tf.keras.preprocessing.image.load_img(img_path, target_size=self.image_size)
+            img_array = tf.keras.preprocessing.image.img_to_array(img)
+            img_array = tf.keras.applications.resnet50.preprocess_input(img_array)
+            batch_images.append(img_array)
+            batch_labels.append(label)
 
-# Paths to your data
-image_dir = 'path/to/spectrograms'
-label_file = 'path/to/labels.txt'
+        return np.array(batch_images), np.array(batch_labels)
 
-# Create dataset and dataloader
-dataset = SpectrogramDataset(image_dir=image_dir, label_file=label_file, transform=transform)
-dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
+    def on_epoch_end(self):
+        np.random.shuffle(self.data)
 
-# Hyperparameters
+# Create the full dataset
+full_dataset = SpectrogramDataset('path/to/spectrograms', 'path/to/labels.txt', batch_size=32)
+
+# Split the data into train and validation sets
+train_data, val_data = train_test_split(full_dataset.data, test_size=0.2, random_state=42)
+
 hidden_size = 256
 num_layers = 2
-output_size = 88  # Adjust based on your label size
+output_size = 88  # Example: one-hot encoding for notes (88 piano keys)
 dropout = 0.2
-learning_rate = 0.001
-num_epochs = 10
-spectrogram_shape = (1, 1024, 55)  # Assuming this is your spectrogram shape
 
-# Create the model
-model = SpectrogramRhythmModel(spectrogram_shape, hidden_size, num_layers, output_size, dropout)
+# Create and compile the model
+model = create_spectrogram_rhythm_model((224, 224, 3), hidden_size, num_layers, output_size, dropout)
+model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 
-# Define optimizer and loss function
-optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-criterion = torch.nn.CrossEntropyLoss()
-
-# Use the existing train_model method
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model.train_model(dataloader, optimizer, criterion, num_epochs, device)
+# Train the model
+history = model.fit(train_dataset, validation_data=val_dataset, epochs=num_epochs)
 
 print("Training finished")
+
+# Save the model
+model.save('spectrogram_rhythm_model.h5')
+
