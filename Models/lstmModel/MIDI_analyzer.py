@@ -77,7 +77,7 @@ def process_midi_file(midi_path):
             beatnum = mod_start // (measure_duration/time_signature[0])
             beat_calc[i][beatnum].append(my_note)
 
-    return all_beats, beat_calc
+    return all_beats, beat_calc, tempo, time_signature
 
 
 

@@ -1,10 +1,17 @@
 from Models.lstmModel import MIDI_analyzer
 from Models.lstmModel.NoteObject import NoteObject
+from Models.lstmModel.BeatObject import BeatObject
+
 import pretty_midi
 import os, argparse
 
-all_beats, beat_times = MIDI_analyzer.process_midi_file('Data/babyslakh_16k/Track00001/MIDI/S00.mid')
+parser = argparse.ArgumentParser(description="Process a MIDI file and generate a MIDI output.")
+parser.add_argument("midi_file", type=str, help="Path to the input MIDI file")
+args = parser.parse_args()
+midi_file_path = args.midi_file  # Get the path from the argument
 
+#all_beats, beat_times = MIDI_analyzer.process_midi_file('Data/babyslakh_16k/Track00001/MIDI/S00.mid')
+all_beats, beat_times, myTempo, myTime_signature = MIDI_analyzer.process_midi_file(midi_file_path)
 for i in beat_times:
     print(i)
     print("This is our measure")
@@ -37,11 +44,11 @@ with open("input.txt", "w") as file:
 # Group the starting based on what division based
 
 
-output_midi = pretty_midi.PrettyMIDI(initial_tempo=200)
+output_midi = pretty_midi.PrettyMIDI(initial_tempo=80)
 piano_program = pretty_midi.instrument_name_to_program('Acoustic Grand Piano')
 piano = pretty_midi.Instrument(program=piano_program)
-bps = 200/60
-output_midi.time_signature_changes.append(pretty_midi.TimeSignature(6, 8, time=0.0))
+bps = 80/60
+output_midi.time_signature_changes.append(pretty_midi.TimeSignature(myTime_signature[0], myTime_signature[1], time=0.0))
 
 
 for i in range((len(all_beats))):
@@ -60,12 +67,7 @@ output_dir = 'beat_outputs'
 if not os.path.exists(output_dir):
     os.makedirs(output_dir)
 
-for i in range(len(all_beats)):
-    #print("Measure: ", i)
-    for my_note in all_beats[i].notes:
-        #print("Note: ", my_note.getNoteType())
-        pass
-
-song_name = 'pirates_midi_mine'
+midi_file_path
+song_name = midi_file_path[len(midi_file_path)-23:len(midi_file_path)-13] + "_" + midi_file_path[len(midi_file_path)-7:len(midi_file_path)-4]
 output_path = os.path.join(output_dir, f'{song_name}_output.mid')
 output_midi.write(output_path)
