@@ -16,7 +16,7 @@ for i in beat_times:
 
 data_in_input = []
 for i in beat_times:
-    spec_file_path = f"Spectrogra_Measures/measures_{i+1}"
+    spec_file_path = f"Spectrogram_Measures/measures_{i+1}"
     for j in beat_times[i]:
         spec_file_new = spec_file_path + f"/spectrogram_{j}"
         note_data = []
