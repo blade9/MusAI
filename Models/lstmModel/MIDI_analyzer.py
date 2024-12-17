@@ -3,6 +3,8 @@ from Models.lstmModel.NoteObject import NoteObject
 from Models.lstmModel.BeatObject import BeatObject
 
 
+#This method takes in a midi file and outputs an beat_array of beats.  Each beat represets a measure in the song
+# And each element in the sub array represents the array of notes it that particular beat
 def process_midi_file(midi_path):
     midi_data = pretty_midi.PrettyMIDI(midi_path)
     time_signature_data = midi_data.time_signature_changes

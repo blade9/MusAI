@@ -46,6 +46,9 @@ class NoteObject:
     def getDuration(self):
         return self.duration
 
+    def getData(self):
+        return self.duration, self.note_type, self.starting_time
+
 
 
 

@@ -3,7 +3,7 @@ import numpy as np
 import os
 import ast
 from sklearn.model_selection import train_test_split
-from lstmModel/LSTM_model import create_spectrogram_rhythm_model
+from Models.lstmModel.LSTM_modelv2 import create_spectrogram_rhythm_model
 
 class SpectrogramDataset(tf.keras.utils.Sequence):
     def __init__(self, image_dir, label_file, batch_size=32, image_size=(224, 224)):
