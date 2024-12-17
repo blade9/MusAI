@@ -80,26 +80,4 @@ class SpectrogramRhythmModel(nn.Module):
             # Print epoch loss
             print(f"Epoch [{epoch + 1}/{num_epochs}], Loss: {running_loss / len(dataloader):.4f}")
 
-# Hyperparameters
-hidden_size = 256
-num_layers = 2
-output_size = 88  # Example: one-hot encoding for notes (88 piano keys)
-dropout = 0.2
-
-# Instantiate the model
-model = SpectrogramRhythmModel(spectrogram_shape, hidden_size, num_layers, output_size)
-
-# Define optimizer and loss function
-optimizer = optim.Adam(model.parameters(), lr=0.001)
-criterion = nn.CrossEntropyLoss()
-
-# Example input
-batch_size = 8
-spectrogram = torch.randn(batch_size, *spectrogram_shape)  # Batch of spectrograms
-labels = torch.randint(0, 88, (batch_size, spectrogram_shape[2]))  # Random labels for time frames
-
-# Forward pass
-output = model(spectrogram)
-loss = criterion(output.view(-1, output_size), labels.view(-1))
-print("Loss:", loss.item())
 
