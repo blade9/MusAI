@@ -37,8 +37,8 @@ class SpectrogramDataset(Dataset):
 
 
 # Paths to your data
-image_dir = 'path/to/spectrograms'
-label_file = 'path/to/labels.txt'
+image_dir = 'Spectrogram_Measures'
+label_file = 'input.txt'
 
 # Create dataset and dataloader
 dataset = SpectrogramDataset(image_dir=image_dir, label_file=label_file, transform=transform)
@@ -49,7 +49,7 @@ for images, labels in dataloader:
     print(images.shape)  # Batch of images
     print(labels)        # Corresponding labels
 
-    hidden_size = 256
+hidden_size = 256
 num_layers = 2
 output_size = 88  # Adjust based on your label size
 dropout = 0.2
