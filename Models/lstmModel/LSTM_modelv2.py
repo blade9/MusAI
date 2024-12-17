@@ -1,73 +1,52 @@
-import torch
-import torch.nn as nn
-import torch.optim as optim
+import tensorflow as tf
+from tensorflow.keras import layers, models
+from tensorflow.keras.applications import ResNet50V2
 
-class RhythmTranscriptionModel(nn.Module):
-    def __init__(self, input_size, hidden_size, num_layers, output_size, dropout=0.2):
-        super(RhythmTranscriptionModel, self).__init__()
+# Define spectrogram shape
+# Format: (time_frames, frequency_bins, channels)
+spectrogram_shape = (55, 1024, 1)
 
-        # LSTM Layer
-        self.lstm = nn.LSTM(input_size=input_size, hidden_size=hidden_size,
-                            num_layers=num_layers, batch_first=True, dropout=dropout)
+def create_spectrogram_rhythm_model(spectrogram_shape, hidden_size, num_layers, output_size, dropout=0.2):
+    # Input layer
+    inputs = layers.Input(shape=spectrogram_shape)
+    
+    # ResNet layers (using ResNet50V2 as an example)
+    resnet = ResNet50V2(include_top=False, weights='imagenet', input_tensor=inputs)
+    
+    # Freeze ResNet layers
+    for layer in resnet.layers:
+        layer.trainable = False
+    
+    # Flatten the ResNet output
+    x = layers.GlobalAveragePooling2D()(resnet.output)
+    
+    # LSTM layers
+    x = layers.Reshape((1, -1))(x)  # Reshape for LSTM input
+    for _ in range(num_layers):
+        x = layers.LSTM(hidden_size, return_sequences=True, dropout=dropout)(x)
+    
+    # Fully connected layers
+    x = layers.Dense(hidden_size // 2, activation='relu')(x)
+    outputs = layers.Dense(output_size)(x)
+    
+    # Create model
+    model = models.Model(inputs=inputs, outputs=outputs)
+    
+    return model
 
-        # Fully connected layer to map LSTM outputs to a higher-dimensional space
-        self.dense = nn.Linear(hidden_size, hidden_size // 2)
+# Create the model
+hidden_size = 256
+num_layers = 2
+output_size = 88  # Example: one-hot encoding for notes (88 piano keys)
+dropout = 0.2
 
-        # Non-linearity (ReLU)
-        self.relu = nn.ReLU()
+model = create_spectrogram_rhythm_model(spectrogram_shape, hidden_size, num_layers, output_size, dropout)
 
-        # Final output layer to predict rhythmic features (e.g., note duration, start times)
-        self.final_layer = nn.Linear(hidden_size // 2, output_size)
+# Compile the model
+model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 
-    def forward(self, x):
-        # LSTM layer
-        lstm_out, _ = self.lstm(x)
+# Print model summary
+model.summary()
 
-        # Dense layer with ReLU
-        dense_out = self.relu(self.dense(lstm_out))
-
-        # Final output layer
-        output = self.final_layer(dense_out)
-
-        return output
-
-
-# Hyperparameters
-input_size = 128  # Input feature size (ensure your data matches this)
-hidden_size = 256  # Size of the hidden layer in the LSTM
-num_layers = 2  # Number of LSTM layers
-output_size = 3  # The number of outputs (e.g., note duration, start time, type)
-dropout = 0.2  # Dropout rate for regularization
-
-# Instantiate the model
-model = RhythmTranscriptionModel(input_size, hidden_size, num_layers, output_size, dropout)
-
-# Optimizer and loss function
-learning_rate = 0.001
-optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-criterion = nn.MSELoss()  # Corrected to instantiate the loss function
-
-# Dummy data for illustration (replace with your actual data)
-X_train = torch.randn((32, 10, 128))  # 32 examples, 10 time steps, 128 features
-y_train = torch.randn((32, 10, 3))  # 32 examples, 10 time steps, 3 output features
-
-
-# Training loop
-epochs = 50
-for epoch in range(epochs):
-    model.train()
-
-    # Forward pass
-    optimizer.zero_grad()
-    predictions = model(X_train)  # Forward pass through the model
-
-    # Compute loss
-    loss = criterion(predictions, y_train)
-
-    # Backward pass and optimization
-    loss.backward()
-    optimizer.step()
-
-    print(f"Epoch [{epoch + 1}/{epochs}], Loss: {loss.item():.4f}")
-
-
+# To train the model (assuming you have your data ready):
+# history = model.fit(x_train, y_train, epochs=num_epochs, batch_size=32, validation_data=(x_val, y_val))
