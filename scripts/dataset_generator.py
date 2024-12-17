@@ -26,7 +26,7 @@ def create_tf_dataset(midi_file_path):
             yield from datapoint_generator(full_path)
 
     output_signature = (
-        tf.TensorSpec(shape=(None, None), dtype=tf.float32),
+        tf.TensorSpec(shape=(1025, 173, 1), dtype=tf.float32),
         tf.TensorSpec(shape=(128,), dtype=tf.int32),
     )
 
