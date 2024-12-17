@@ -12,16 +12,16 @@ def datapoint_generator(midi_file_path):
         spectrogram = midi_to_spectrogram(midi)
         spectrogram = (spectrogram - spectrogram.min()) / (spectrogram.max() - spectrogram.min())
         label = get_midi_label(midi)
-        yield spectrogram.astype(np.float32), label.astype(np.int32)
-
+        yield np.expand_dims(spectrogram, axis=-1).astype(np.float32), label.astype(np.int32)
 
 def create_tf_dataset(midi_file_path):
     def multi_file_generator(midi_file_path):
         midi_files = [f for f in os.listdir(midi_file_path)]
+        total_files = len(midi_files)
 
-        for midi in os.listdir(midi_file_path):
+        for i, midi in enumerate(midi_files):
             midi_file = os.path.join(midi_file_path, midi)
-            print(f'Processing {midi.decode('utf-8')}...')
+            print(f'\rProcessing {i}/{total_files}: {midi.decode("utf-8")}...', end='', flush=True)
             full_path = os.path.join(midi_file_path, midi)
             yield from datapoint_generator(full_path)
 
@@ -36,5 +36,4 @@ def create_tf_dataset(midi_file_path):
         output_signature=output_signature,
     )
 
-    dataset = dataset.shuffle(1000).batch(32).prefetch(tf.data.AUTOTUNE)
     return dataset
