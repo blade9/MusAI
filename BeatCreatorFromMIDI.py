@@ -32,8 +32,9 @@ for i in beat_times:
         txtline = spec_file_new + ", " + str(note_data)
         data_in_input.append(txtline)
 
+song_name = midi_file_path[len(midi_file_path)-23:len(midi_file_path)-13] + "_" + midi_file_path[len(midi_file_path)-7:len(midi_file_path)-4]
 
-with open("input.txt", "w") as file:
+with open(song_name+".txt", "w") as file:
     for line in data_in_input:
         file.write(line+"\n")
 
@@ -68,6 +69,5 @@ if not os.path.exists(output_dir):
     os.makedirs(output_dir)
 
 midi_file_path
-song_name = midi_file_path[len(midi_file_path)-23:len(midi_file_path)-13] + "_" + midi_file_path[len(midi_file_path)-7:len(midi_file_path)-4]
 output_path = os.path.join(output_dir, f'{song_name}_output.mid')
 output_midi.write(output_path)
