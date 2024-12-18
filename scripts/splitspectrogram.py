@@ -121,13 +121,11 @@ def generate_spectrogram(audio_file, output_dir, time_signature=(4, 4)):
         # Extract the segment from the full spectrogram
         spectrogram_segment = D[:, segment_start:segment_end]
         segment_output_path = os.path.join(spectrogram_dir, f"measure_{i}")
-        
-        if not os.path.exists(segment_output_path):
-            os.makedirs(segment_output_path)
+
         for j in range(time_signature[0]):
             beat_segment = spectrogram_segment[:, int(frames_per_second/4)*j:(j+1)*int(frames_per_second/4)]
             final_path = os.path.join(segment_output_path, f"spectrogram_{j}.png")
-            txt_path = os.path.join(segment_output_path, f"spectrogram_{j}.txt")
+            txt_path = segment_output_path + f"spectrogram_{j}.txt"
             np.savetxt(txt_path, beat_segment, fmt="%0.6f")
 
             #This line is meant for testing purposes.  Uncomment this line out to visualize the individual
