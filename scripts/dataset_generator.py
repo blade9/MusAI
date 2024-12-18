@@ -23,7 +23,7 @@ def augment_image(image, label):
     image = tf.image.random_brightness(image, max_delta=0.1)
     return image, label
 
-def generate_dataset(input_file='input.txt', batch_size=32, augment=True):
+def generate_dataset(input_file='Track00001_S00.txt', batch_size=32, augment=True):
     AUTOTUNE = tf.data.experimental.AUTOTUNE
 
     # Get the directory of the input file
