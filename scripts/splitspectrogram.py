@@ -83,6 +83,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 # from Models.lstmModel.NoteObject import NoteObject
 
+
+
+
 def generate_spectrogram(audio_file, output_dir, time_signature=(4, 4)):
     # Ensure the output directory exists
     if not os.path.exists(output_dir):
@@ -92,6 +95,7 @@ def generate_spectrogram(audio_file, output_dir, time_signature=(4, 4)):
     onset_env = librosa.onset.onset_strength(y=y, sr=sr)
     tempo = librosa.feature.tempo(onset_envelope=onset_env, start_bpm=100, sr=sr)
     print(f"This is the tempo: {tempo[0]}")
+    tempo = 145
 
 
     cur_n_fft = 2048
@@ -113,6 +117,8 @@ def generate_spectrogram(audio_file, output_dir, time_signature=(4, 4)):
     if not os.path.exists(spectrogram_dir):
         os.makedirs(spectrogram_dir)
 
+    num_time_frames = {}
+    full_array = {}
     # Split the spectrogram into smaller segments based on the beats
     for i in range(len(D[0]) // frames_per_second):
         segment_start = frames_per_second * i
@@ -124,6 +130,8 @@ def generate_spectrogram(audio_file, output_dir, time_signature=(4, 4)):
 
         for j in range(time_signature[0]):
             beat_segment = spectrogram_segment[:, int(frames_per_second/4)*j:(j+1)*int(frames_per_second/4)]
+            num_time_frames[(i, j)] = beat_segment.shape
+            full_array[(i, j)] = beat_segment
             final_path = os.path.join(segment_output_path, f"spectrogram_{j}.png")
             txt_path = segment_output_path + f"spectrogram_{j}.txt"
             np.savetxt(txt_path, beat_segment, fmt="%0.6f")
@@ -132,14 +140,14 @@ def generate_spectrogram(audio_file, output_dir, time_signature=(4, 4)):
             #Spectrograms
             #produceSpectrogramImage(beat_segment, sr, final_path)
 
-        
-        
-        # Produce and save each spectrogram segment
-        '''
-        segment_output_path = os.path.join(spectrogram_dir, f"spectrogram_{i+1}.png")
-        produceSpectrogramImage(spectrogram_segment, sr, segment_output_path)
-            spectrogram_segment = D[:, segment_start:segment_end]
-        '''
+    return num_time_frames, full_array
+
+    # Produce and save each spectrogram segment
+    '''
+    segment_output_path = os.path.join(spectrogram_dir, f"spectrogram_{i+1}.png")
+    produceSpectrogramImage(spectrogram_segment, sr, segment_output_path)
+    spectrogram_segment = D[:, segment_start:segment_end]
+    '''
 
 def produceSpectrogramImage(D, sr, output_image):
     # Plot and save the spectrogram

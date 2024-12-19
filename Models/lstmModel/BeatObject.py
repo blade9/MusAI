@@ -15,4 +15,9 @@ class BeatObject:
     def getID(self):
         return self.numberID
 
+    def getLSTMoutputForm(self):
+        for my_note in self.notes:
+
+            pass
+
 

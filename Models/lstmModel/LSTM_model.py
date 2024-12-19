@@ -1,84 +1,123 @@
 import torch
 import torch.nn as nn
+
 import torch.optim as optim
 from torchvision import models
 
 # Define spectrogram shape
 # Format: (channels, frequency_bins, time_frames)
-spectrogram_shape = (1, 1024, 55)
-
 
 class SpectrogramRhythmModel(nn.Module):
     def __init__(self, spectrogram_shape, hidden_size, num_layers, output_size, dropout=0.2):
         super(SpectrogramRhythmModel, self).__init__()
 
-        # CNN layers
+        freq_bins, time_frames = spectrogram_shape
 
+        self.lstm = nn.LSTM(input_size=freq_bins, hidden_size=hidden_size,
+                            num_layers=num_layers, batch_first=True, dropout=dropout, bidirectional=False)
+
+        self.fc = nn.Linear(hidden_size, output_size)
+
+    def forward(self, x):
+
+        batch_size, freq_bins, time_frames = x.size()
+        x = x.view(batch_size, time_frames, freq_bins)
+
+        lstm_out, __ = self.lstm(x)
+        output = self.fc(lstm_out)
+        return output
+''' 
+
+        # CNN layers
+        
         self.conv1 = nn.Conv2d(1, 32, kernel_size=(3, 3), padding=1)
         self.conv2 = nn.Conv2d(32, 64, kernel_size=(3, 3), padding=1)
         self.pool = nn.MaxPool2d((2, 2))
         self.relu = nn.ReLU()
 
-        # Compute the flattened size after convolution + pooling
         channels, freq_bins, time_frames = spectrogram_shape
         with torch.no_grad():
             dummy_input = torch.randn(1, 1, freq_bins, time_frames)  # 1 batch, 1 channel
-            conv_out = self.pool(self.relu(self.conv2(self.pool(self.relu(self.conv1(dummy_input))))))
-            self.flattened_size = conv_out.view(1, -1).size(1)
+            conv_out = self.pool(self.relu(
+                self.conv2(self.pool(self.relu(self.conv1(dummy_input))))))  # [1, 64, freq_bins/4, time_frames/4]
+            _, _, flattened_freq_bins, flattened_time_frames = conv_out.shape
+            self.flattened_size = flattened_freq_bins * 64  # Multiply the number of channels (64) by the frequency bins after pooling
 
-        self.lstm_input_size = (freq_bins // 2) * (time_frames // 2) * 64
+        self.lstm = nn.LSTM(
+            input_size=self.flattened_size,  # Input size to the LSTM comes from the CNN output
+            hidden_size=hidden_size,
+            num_layers=num_layers,
+            batch_first=True,
+            dropout=dropout,
+        )
 
+        self.fc1 = nn.Linear(hidden_size, hidden_size // 2)
+        self.fc2 = nn.Linear(hidden_size // 2, output_size)
+        self.relu = nn.ReLU()
+        
         # LSTM layers
-        self.lstm = nn.LSTM(input_size=self.flattened_size, hidden_size=hidden_size,
-                            num_layers=num_layers, batch_first=True, dropout=dropout)
-
+        self.lstm = None
+        self.hidden_size = hidden_size
+        self.num_layers = num_layers
+        self.output_size = output_size
+        #nn.LSTM(input_size=self.flattened_size, hidden_size=hidden_size,
+         #                   num_layers=num_layers, batch_first=True, dropout=dropout)
 
         # Fully connected output layers
         self.fc1 = nn.Linear(hidden_size, hidden_size // 2)
-        self.relu = nn.ReLU()
-        self.output_layer = nn.Linear(hidden_size // 2, output_size)
+        self.fc2 = nn.Linear(hidden_size // 2, output_size)
+        self.relu()
+        #self.output_layer = nn.Linear(hidden_size // 2, output_size)
+'''
 
-    def forward(self, x):
-        # ResNet feature extraction
-        x = self.resnet(x)
-        batch_size = x.size(0)
-        x = x.view(batch_size, -1)  # Flatten the ResNet output
+    #def forward(self, x):
+'''
+        # Apply convolutional layers
+        # Apply convolutional layers
+        x = self.pool(self.relu(self.conv1(x)))  # [batch_size, 32, freq_bins, time_frames]
+        x = self.pool(self.relu(self.conv2(x)))  # [batch_size, 64, freq_bins/4, time_frames/4]
+
+        # Flatten the CNN output for LSTM
+        batch_size, channels, freq_bins, time_frames = x.size()
+        x = x.permute(0, 3, 1, 2)  # Rearrange to [batch_size, time_frames, channels, freq_bins]
+        x = x.contiguous().view(batch_size, time_frames, -1)  # [batch_size, time_frames, input_size]
 
         # LSTM processing
-        lstm_out, _ = self.lstm(x.unsqueeze(1))  # Add sequence dimension
+        lstm_out, _ = self.lstm(x)  # [batch_size, seq_len (time_frames), hidden_size]
+
+        # Fully connected layers
+        x = self.relu(self.fc1(lstm_out))  # [batch_size, seq_len, hidden_size // 2]
+        output = self.fc2(x)  # [batch_size, seq_len, output_size]
+
+        return output
+
+
+        x = self.pool(self.relu(self.conv2(self.pool(self.relu(self.conv1(x))))))  # Apply conv1, conv2, and pooling
+        batch_size, channels, freq_bins, time_frames = x.size()
+        x = x.permute(0, 3, 1, 2)  # Rearrange to [batch_size, time_frames, channels, freq_bins]
+        x = x.reshape(batch_size, time_frames, -1)  # Flatten channels and freq_bins for LSTM input
+
+        # Flatten the output to match the input size for LSTM
+
+        #flattened_size = channels * freq_bins
+        #x = x.view(batch_size, time_frames, flattened_size)  # Reshaping for LSTM: [batch_size, seq_len, input_size]
+
+        # LSTM processing
+        if self.lstm is None:
+            # Initialize LSTM only after knowing the flattened size
+            self.lstm = nn.LSTM(input_size=flattened_size, hidden_size=self.hidden_size,
+                                num_layers=self.num_layers, batch_first=True, dropout=0.2)
+
+        lstm_out, _ = self.lstm(x)
+
+        lstm_out = lstm_out.contiguous().view(-1, self.hidden_size)
+
 
         # Fully connected layers
         x = self.relu(self.fc1(lstm_out))
         output = self.output_layer(x)
-        return output
-    
-    def train_model(model, dataloader, optimizer, criterion, num_epochs, device):
-        model.to(device)
-        for epoch in range(num_epochs):
-            model.train()  # Set the model to training mode
-            running_loss = 0.0
-
-            for spectrograms, labels in dataloader:
-                # Move data to the appropriate device (CPU/GPU)
-                spectrograms = spectrograms.to(device)
-                labels = labels.to(device)
-
-                # Zero the parameter gradients
-                optimizer.zero_grad()
-
-                # Forward pass
-                outputs = model(spectrograms)
-
-                # Reshape outputs and labels for loss computation
-                loss = criterion(outputs.view(-1, outputs.size(-1)), labels.view(-1))
-
-                # Backward pass and optimize
-                loss.backward()
-                optimizer.step()
-
-                running_loss += loss.item()
-
-            # Print epoch loss
-            print(f"Epoch [{epoch + 1}/{num_epochs}], Loss: {running_loss / len(dataloader):.4f}")
+        return output 
+        
+'''
 
 

@@ -10,6 +10,9 @@ def process_midi_file(midi_path):
     time_signature_data = midi_data.time_signature_changes
 
     tempo = round(midi_data.estimate_tempo())
+
+    #Tempo calculations were not too good so just put the tempo of the actual midi here
+    tempo = 145
     if len(time_signature_data) > 0:
         first_time = time_signature_data[0]
         numer = first_time.numerator
@@ -25,12 +28,6 @@ def process_midi_file(midi_path):
     measures = int(total_beats // time_signature[0])
     measure_duration = round(time_signature[0] / bps, 4)
 
-    print(measure_duration)
-    print(time_signature)
-    print(tempo)
-    print(bps)
-    print()
-
     for i in range(measures):
         newBeat = BeatObject(i, [], tempo, time_signature[0], time_signature[1])
         all_beats[newBeat.getID()] = newBeat
@@ -39,21 +36,18 @@ def process_midi_file(midi_path):
     for instrument in midi_data.instruments:
         for note in instrument.notes:
             start_time = round(note.start, 4)
+            start_time = round(start_time - (measure_duration/time_signature[0])*2, 4)
             end_time = round(note.end, 4)
+            end_time = round(end_time - (measure_duration/time_signature[0])*2, 4)
             duration_in_seconds = end_time - start_time
             duration_in_beats = round(bps * duration_in_seconds, 4)
 
-            if start_time not in list_start_time:
-                list_start_time.append(start_time)
-                new_note = NoteObject(duration_in_beats, start_time, time_signature[0], time_signature[1])
-                measure_index = int(start_time/measure_duration)
-                #print(new_note.duration)
-                #print(new_note.getNoteType())
-                all_beats[measure_index].addNote(new_note)
+            list_start_time.append(start_time)
+            new_note = NoteObject(duration_in_beats, start_time, time_signature[0], time_signature[1])
+            measure_index = int(start_time/measure_duration)
+            all_beats[measure_index].addNote(new_note)
 
     for i in range(len(all_beats)):
-        #print(i)
-        #print()
         sum = 0
         for my_note in all_beats[i].notes:
             #print(NoteObject.NOTE_TYPES[my_note.getNoteType()])
