@@ -1,4 +1,5 @@
 import tensorflow as tf
+import torch
 from tensorflow.keras import layers, models
 from tensorflow.keras.applications import ResNet50V2
 
@@ -50,3 +51,19 @@ model.summary()
 
 # To train the model (assuming you have your data ready):
 # history = model.fit(x_train, y_train, epochs=num_epochs, batch_size=32, validation_data=(x_val, y_val))
+
+def rhythm_mapping_loss(pred_onsets, true_onsets, pred_durations, true_durations, beat_grid=1.0):
+    # Onset Loss (MAE)
+    onset_loss = torch.mean(torch.abs(pred_onsets - true_onsets))
+
+    # Duration Loss (MSE for continuous durations)
+    duration_loss = torch.mean((pred_durations - true_durations) ** 2)
+
+    # Measure Loss (Alignment to beat grid)
+    measure_loss = torch.mean(torch.abs((pred_onsets % beat_grid)))
+
+    # Combine losses with weights
+    alpha, beta, gamma = 1.0, 1.0, 0.5
+    total_loss = alpha * onset_loss + beta * duration_loss + gamma * measure_loss
+
+    return total_loss

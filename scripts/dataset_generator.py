@@ -7,10 +7,26 @@ def load_data_from_file(file_path):
     labels = []
     with open(file_path, 'r') as f:
         for line in f:
-            filename, *label_values = line.strip().split()
-            filenames.append(filename)
-            labels.append([float(val) for val in label_values])
-    return filenames, np.array(labels)
+            parts = line.strip().split()
+            if len(parts) < 2:
+                continue  # Skip lines with insufficient data
+            filename = parts[0]
+            label_values = parts[1:]
+            
+            # Handle empty brackets
+            if label_values == ['[]']:
+                label_values = []
+            
+            try:
+                float_labels = [float(val) for val in label_values]
+                filenames.append(filename)
+                labels.append(float_labels)
+            except ValueError:
+                print(f"Skipping invalid line: {line.strip()}")
+                continue
+    
+    return filenames, np.array(labels, dtype=object)
+
 
 def parse_image(filename, label):
     image = tf.io.read_file(filename)
@@ -23,7 +39,7 @@ def augment_image(image, label):
     image = tf.image.random_brightness(image, max_delta=0.1)
     return image, label
 
-def generate_dataset(input_file='input.txt', batch_size=32, augment=True):
+def generate_dataset(input_file='Track00001_S00.txt', batch_size=32, augment=True):
     AUTOTUNE = tf.data.experimental.AUTOTUNE
 
     # Get the directory of the input file
