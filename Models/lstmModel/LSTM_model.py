@@ -14,16 +14,17 @@ class SpectrogramRhythmModel(nn.Module):
 
         # CNN layers
 
-        self.resnet = models.resnet18(pretrained=True)
-        self.resnet.conv1 = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
-        self.resnet = nn.Sequential(*list(self.resnet.children())[:-2])
+        self.conv1 = nn.Conv2d(1, 32, kernel_size=(3, 3), padding=1)
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=(3, 3), padding=1)
+        self.pool = nn.MaxPool2d((2, 2))
+        self.relu = nn.ReLU()
 
         # Compute the flattened size after convolution + pooling
         channels, freq_bins, time_frames = spectrogram_shape
         with torch.no_grad():
             dummy_input = torch.randn(1, 1, freq_bins, time_frames)  # 1 batch, 1 channel
-            resnet_output = self.resnet(dummy_input)
-            self.flattened_size = resnet_output.view(1, -1).size(1)
+            conv_out = self.pool(self.relu(self.conv2(self.pool(self.relu(self.conv1(dummy_input))))))
+            self.flattened_size = conv_out.view(1, -1).size(1)
 
         self.lstm_input_size = (freq_bins // 2) * (time_frames // 2) * 64
 
