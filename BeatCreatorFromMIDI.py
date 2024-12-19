@@ -180,24 +180,30 @@ input_tensor, output_tensor = makeLSTMoutputDate(beat_times, shape_freq_bins,
 print(input_tensor.shape)
 np.savetxt("see_what is in here", output_tensor, fmt='%d')
 print(output_tensor.shape)
+flattened = input_tensor.reshape(input_tensor.shape[0], -1)
+
+np.savetxt("and here", flattened, fmt='%d')
+
 
 dataset = TensorDataset(input_tensor, output_tensor)
 
-dataloader = DataLoader(dataset, batch_size=216)
+dataloader = DataLoader(dataset, batch_size=27)
 
 spectrogram_shape = ((shape_freq_bins[(0, 0)])[0], (shape_freq_bins[(0, 0)])[1])
 input_size = input_tensor.size(2)
 hidden_size = 128
-num_layers = 2
+num_layers = 4
 output_size = 15
-batch_size = 216
-learning_rate = 0.1
+batch_size = 27
+learning_rate = 1
 epochs = 30
 
 
 model = Models.lstmModel.LSTM_model.SpectrogramRhythmModel(spectrogram_shape, hidden_size, num_layers, output_size)
 loss_function = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+input_tensor = (input_tensor - input_tensor.mean()) / input_tensor.std()
+
 
 for epoch in range(epochs):
     model.train()  # Set model to training mode
@@ -210,13 +216,16 @@ for epoch in range(epochs):
         # Forward pass
         predictions = model(batch_inputs)
         print(f"Shape of predictions: {predictions.shape}")
-        print(f"Shape of predictions: {batch_outputs.shape}")
+        print(f"Shape of batch_output: {batch_outputs.shape}")
 
 
         # Compute the loss
         # Flatten the predictions and targets to match the shape for CrossEntropyLoss
         predictions = predictions.view(-1, output_size)  # Shape: [batch_size * time_frames, 3]
-        batch_outputs = batch_outputs.view(-1)  # Shape: [batch_size * time_frames]
+        batch_outputs = batch_outputs.view(batch_size * spectrogram_shape[1])  # Shape: [batch_size * time_frames]
+        print(f"Shape of predictions: {predictions.shape}")
+        predictions = predictions.view(-1, output_size)  # Shape: [batch_size * time_frames, 3]
+
         batch_outputs = batch_outputs.long()
         print(f"Shape of predictions: {predictions.shape}")
         print(f"Shape of predictions: {batch_outputs.shape}")

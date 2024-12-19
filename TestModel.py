@@ -34,10 +34,10 @@ inputs_tensor = torch.tensor(inputs, dtype=torch.float32)
 spectrogram_shape = ((shape_freq_bins[(0, 0)])[0], (shape_freq_bins[(0, 0)])[1])
 input_size = inputs_tensor.size(2)
 hidden_size = 128
-num_layers = 2
+num_layers = 4
 output_size = 15
 batch_size = 216
-learning_rate = 0.001
+learning_rate = 1
 epochs = 300
 model = Models.lstmModel.LSTM_model.SpectrogramRhythmModel(spectrogram_shape, hidden_size, num_layers, output_size)
 model.load_state_dict(torch.load('Models/lstmModel/trained_rhythm_model.pth'))

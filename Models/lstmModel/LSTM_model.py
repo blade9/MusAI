@@ -10,22 +10,60 @@ from torchvision import models
 class SpectrogramRhythmModel(nn.Module):
     def __init__(self, spectrogram_shape, hidden_size, num_layers, output_size, dropout=0.2):
         super(SpectrogramRhythmModel, self).__init__()
+        '''
+        self.hidden_size = hidden_size
+        self.num_layers = num_layers
+        self.output_size = output_size
 
+        # Unpack the spectrogram shape
+        freq_bins, time_frames = spectrogram_shape
+
+        # Reshape the input for LSTM (we want [batch_size, time_frames, freq_bins])
+        self.lstm = nn.LSTM(input_size=freq_bins, hidden_size=hidden_size,
+                            num_layers=num_layers, batch_first=True, dropout=dropout, bidirectional=False)
+
+        # Fully connected layers
+        self.fc1 = nn.Linear(hidden_size, hidden_size // 2)
+        self.fc2 = nn.Linear(hidden_size // 2, output_size)
+
+        '''
         freq_bins, time_frames = spectrogram_shape
 
         self.lstm = nn.LSTM(input_size=freq_bins, hidden_size=hidden_size,
                             num_layers=num_layers, batch_first=True, dropout=dropout, bidirectional=False)
 
-        self.fc = nn.Linear(hidden_size, output_size)
+        self.fc1 = nn.Linear(hidden_size, hidden_size // 2)
+        self.fc2 = nn.Linear(hidden_size // 2, output_size)
 
     def forward(self, x):
+        '''
+        batch_size, _, time_frames = x.size()
 
+        # Ensure correct shape [batch_size, time_frames, freq_bins]
+        x = x.view(batch_size, time_frames, -1, out)  # Flatten the frequency dimension
+
+        # Pass through LSTM
+        lstm_out, _ = self.lstm(x)  # Output shape: [batch_size, time_frames, hidden_size]
+
+        # Pass through fully connected layers
+        lstm_out = lstm_out[:, -1, :]  # Get the output of the last time step for classification
+
+        x = self.fc1(lstm_out)  # First fully connected layer
+        x = torch.relu(x)  # ReLU activation
+        output = self.fc2(x)  # Output layer
+        return output
+        '''
         batch_size, freq_bins, time_frames = x.size()
         x = x.view(batch_size, time_frames, freq_bins)
 
         lstm_out, __ = self.lstm(x)
-        output = self.fc(lstm_out)
+        x = self.fc1(lstm_out)  # First fully connected layer
+        x = torch.relu(x)  # ReLU activation
+        output = self.fc2(x)  # Output layer
         return output
+
+
+
 ''' 
 
         # CNN layers
